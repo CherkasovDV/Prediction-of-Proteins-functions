@@ -1,0 +1,93 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, mean_squared_error
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import abc
+
+class BaseLoss(abc.ABC):
+    """Базовый класс лосса"""
+    @abc.abstractmethod
+    def calc_loss(self, X: np.ndarray, y: np.ndarray, w: np.ndarray) -> float:
+        """
+        Функция для вычислений значения лосса
+        :param X: np.ndarray размера (n_objects, n_features) с объектами датасета
+        :param y: np.ndarray размера (n_objects,) с правильными ответами
+        :param w: np.ndarray размера (n_features,) с весами линейной регрессии
+        :return: число -- значения функции потерь
+        """
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def calc_grad(self, X: np.ndarray, y: np.ndarray, w: np.ndarray) -> np.ndarray:
+        """
+        Функция для вычислений градиента лосса по весам w
+        :param X: np.ndarray размера (n_objects, n_features) с объектами датасета
+        :param y: np.ndarray размера (n_objects,) с правильными ответами
+        :param w: np.ndarray размера (n_features,) с весами линейной регрессии
+        :return: np.ndarray размера (n_features,) градиент функции потерь по весам w
+        """
+        raise NotImplementedError
+        
+class MSELoss(BaseLoss):
+    def calc_loss(self, X: np.ndarray, y: np.ndarray, w: np.ndarray) -> float:
+        """
+        Функция для вычислений значения лосса
+        :param X: np.ndarray размера (n_objects, n_features) с объектами датасета
+        :param y: np.ndarray размера (n_objects,) с правильными ответами
+        :param w: np.ndarray размера (n_features,) с весами линейной регрессии
+        :return: число -- значения функции потерь
+        """
+        
+        Q = np.square(X.dot(w) - y).mean()
+        return Q
+        
+        
+    def calc_grad(self, X: np.ndarray, y: np.ndarray, w: np.ndarray) -> np.ndarray:
+        """
+        Функция для вычислений градиента лосса по весам w
+        :param X: np.ndarray размера (n_objects, n_features) с объектами датасета
+        :param y: np.ndarray размера (n_objects,) с правильными ответами
+        :param w: np.ndarray размера (n_features,) с весами линейной регрессии
+        :return: np.ndarray размера (n_features,) градиент функции потерь по весам w
+        """
+        
+        grad = 2 * (np.transpose(X).dot(X.dot(w) - y)) / X.shape[0]
+        return grad
+        
+from typing import List, Iterable
+
+
+def stochastic_gradient_descent(w_init: np.ndarray, X: np.ndarray, y: np.ndarray, 
+                        loss: BaseLoss, lr: float, batch_size: int, n_iterations: int = 1000) -> List[np.ndarray]:
+    """
+    Функция градиентного спуска
+    :param w_init: np.ndarray размера (n_feratures,) -- начальное значение вектора весов
+    :param X: np.ndarray размера (n_objects, n_features) -- матрица объекты-признаки
+    :param y: np.ndarray размера (n_objects,) -- вектор правильных ответов
+    :param loss: Объект подкласса BaseLoss, который умеет считать градиенты при помощи loss.calc_grad(X, y, w)
+    :param lr: float -- параметр величины шага, на который нужно домножать градиент
+    :param batch_size: int -- размер подвыборки, которую нужно семплировать на каждом шаге
+    :param n_iterations: int -- сколько итераций делать
+    :return: Список из n_iterations объектов np.ndarray размера (n_features,) -- история весов на каждом шаге
+    """
+    w_history = [w_init]
+    for i in range(1, n_iterations + 1):
+        batch_indices = np.random.choice(X.shape[0], size=batch_size, replace=False)
+        
+        batch = X[batch_indices]
+        y_batch = y[batch_indices]
+        
+        batch_grad = np.zeros((len(list_columns)))
+        for x, y_j in zip(batch, y_batch):
+            grad_j = loss.calc_grad(x, y_j, w_history[i - 1])
+            batch_grad += grad_j
+            
+        w_history.append(w_history[i - 1] - lr * np.array(batch_grad) / batch_size)
+    return w_history
