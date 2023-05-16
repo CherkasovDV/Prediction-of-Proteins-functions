@@ -50,3 +50,15 @@ tokenizer.fit_on_texts(seqs)
 X_seq = tokenizer.texts_to_sequences(seqs)
 X_seq = tf.keras.utils.pad_sequences(X_seq, maxlen=max_len) #проверяем что риды одной длины
 print(df.info())
+
+#итоговая модель
+input = Input(shape=(max_len,)) #последовательность
+
+layer = Embedding(len(tokenizer.word_index)+1, 8)(input) #встраиваемый слой
+CNN_Layer_pre = Conv1D(filters=64,kernel_size=6,padding='same',activation='relu')(layer)
+CNN_layer = Conv1D(filters=32,kernel_size=3,padding='same',activation='relu')(CNN_Layer_pre)
+MaxPooling_layer = MaxPooling1D(pool_size=2)(CNN_layer)
+LSTM_Layer = LSTM(150)(MaxPooling_layer)
+
+output = Dense(top, activation='softmax')(LSTM_Layer)
+model = Model(inputs=input, outputs=output)
