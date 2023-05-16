@@ -55,10 +55,10 @@ print(df.info())
 input = Input(shape=(max_len,)) #последовательность
 
 layer = Embedding(len(tokenizer.word_index)+1, 8)(input) #встраиваемый слой
-CNN_Layer_pre = Conv1D(filters=64,kernel_size=6,padding='same',activation='relu')(layer)
-CNN_layer = Conv1D(filters=32,kernel_size=3,padding='same',activation='relu')(CNN_Layer_pre)
-MaxPooling_layer = MaxPooling1D(pool_size=2)(CNN_layer)
-LSTM_Layer = LSTM(150)(MaxPooling_layer)
+conv_layer_0 = Conv1D(filters=64,kernel_size=6,padding='same',activation='relu')(layer) #1D слой свёртки
+conv_layer = Conv1D(filters=32,kernel_size=3,padding='same',activation='relu')(conv_layer_0)
+concat_layer = MaxPooling1D(pool_size=2)(conv_layer) #Max операция объединения для 1D временных данных для уменьшения выборки представления
+mem_layer = LSTM(150)(concat_layer) #слой LST-памяти
 
-output = Dense(top, activation='softmax')(LSTM_Layer)
-model = Model(inputs=input, outputs=output)
+output = Dense(top, activation='softmax')(mem_layer)
+model = Model(inputs=input, outputs=output) #Модель, группирующая слои в объект с функциями обучения/вывода
